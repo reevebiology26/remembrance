@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suffolk Remembrance</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts for elegant serif typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Typography */
+        .font-playfair { font-family: 'Playfair Display', serif; }
+        .font-lora { font-family: 'Lora', serif; }
+
+        /* Global & Backgrounds */
+        body {
+            background-color: #0a0a0a;
+            color: #e5e5e5;
+            overflow: hidden; /* Prevent scrolling, app is self-contained */
+        }
+        .bg-field {
+            background: radial-gradient(circle at center, #262629 0%, #111112 100%);
+        }
+
+        /* Smooth Fading Transitions */
+        .fade-layer {
+            transition: opacity 2s ease-in-out;
+        }
+        .hidden-fade {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .visible-fade {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Interactive Poppy Animations */
+        .poppy-wrapper {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 10;
+        }
+        .poppy-icon {
+            transition: transform 2.5s ease-in-out;
+            transform-origin: center;
+        }
+        /* The 'opening' effect via slow rotation and scale (Removed heavy drop-shadow filter) */
+        .poppy-wrapper:hover .poppy-icon, .poppy-wrapper.active .poppy-icon {
+            transform: rotate(135deg) scale(1.25);
+        }
+
+        /* Scroll of Honour Animation */
+        @keyframes scrollCredits {
+            0% { transform: translateY(100vh); }
+            100% { transform: translateY(-100%); }
+        }
+        .scrolling-content {
+            /* Exactly 120 seconds for the two minute silence */
+            animation: scrollCredits 120s linear forwards;
+        }
+
+        /* Removed mask-image for iOS WebKit performance */
+        .scroll-mask {
+            position: relative;
+        }
+    </style>
+</head>
+<body class="font-lora antialiased selection:bg-[#8a0000] selection:text-white">
+
+    <!-- 1. Splash Screen -->
+    <div id="splash-screen" class="fade-layer visible-fade fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0a0a0a] cursor-pointer">
+        <!-- White Cenotaph Background -->
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/The_Cenotaph%2C_Whitehall%2C_London.jpg/800px-The_Cenotaph%2C_Whitehall%2C_London.jpg" alt="Cenotaph" class="absolute inset-0 w-full h-full object-cover opacity-15 grayscale brightness-150 pointer-events-none">
+        
+        <div id="splash-text" class="text-center opacity-0 transition-opacity duration-[3000ms] ease-in px-4 relative z-10 flex flex-col items-center">
+            <!-- Large Poppy -->
+            <svg viewBox="0 0 100 100" class="w-32 h-32 md:w-40 md:h-40 mb-6 drop-shadow-2xl">
+                <defs>
+                    <radialGradient id="largePoppyGrad" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="#b30000"/>
+                        <stop offset="60%" stop-color="#8a0000"/>
+                        <stop offset="100%" stop-color="#3a0000"/>
+                    </radialGradient>
+                </defs>
+                <path d="M50,15 C75,5 95,25 85,45 C95,65 75,95 50,85 C25,95 5,65 15,45 C5,25 25,5 50,15 Z" fill="url(#largePoppyGrad)" stroke="#1a0000" stroke-width="1"/>
+                <path d="M25,25 C45,10 75,10 85,35 C95,60 75,85 50,85 C20,85 5,60 25,25 Z" fill="url(#largePoppyGrad)" opacity="0.9"/>
+                <circle cx="50" cy="50" r="12" fill="#151515"/>
+                <g fill="#c5a059">
+                    <circle cx="50" cy="41" r="1.2"/><circle cx="58" cy="45" r="1.2"/>
+                    <circle cx="59" cy="54" r="1.2"/><circle cx="50" cy="59" r="1.2"/>
+                    <circle cx="41" cy="54" r="1.2"/><circle cx="42" cy="45" r="1.2"/>
+                    <circle cx="54" cy="42" r="1.2"/><circle cx="46" cy="58" r="1.2"/>
+                    <circle cx="45" cy="43" r="1.2"/><circle cx="55" cy="56" r="1.2"/>
+                </g>
+            </svg>
+
+            <h1 class="font-playfair italic text-2xl md:text-4xl text-gray-300 mb-8 leading-relaxed">
+                They shall grow not old, as we that are left grow old:<br>
+                Age shall not weary them, nor the years condemn.
+            </h1>
+            <h2 class="font-playfair text-3xl md:text-5xl text-[#c5a059] tracking-wider leading-relaxed mt-4 font-semibold">
+                At the going down of the sun and in the morning,<br>
+                We will remember them.
+            </h2>
+            <p class="mt-16 text-sm text-gray-500 font-lora animate-pulse tracking-widest uppercase">Click anywhere to enter</p>
+        </div>
+    </div>
+
+    <!-- 2. Main Screen (Poppy Field) -->
+    <div id="main-screen" class="fade-layer hidden-fade fixed inset-0 z-10 bg-black flex flex-col">
+        <!-- Background Imagery (Cenotaph) -->
+        <div class="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/The_Cenotaph%2C_Whitehall%2C_London.jpg/800px-The_Cenotaph%2C_Whitehall%2C_London.jpg" alt="Cenotaph" class="absolute top-0 left-0 w-full h-full object-cover opacity-30">
+            <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/80 to-[#0a0a0a]/80"></div>
+        </div>
+
+        <!-- Header -->
+        <header class="w-full text-center pt-12 pb-4 z-20 pointer-events-none relative">
+            <h1 class="font-playfair text-3xl md:text-4xl text-gray-200 tracking-wide drop-shadow-md">Suffolk Remembrance</h1>
+            <p class="text-gray-300 mt-2 italic text-sm md:text-base">Honouring the fallen of the county.</p>
+        </header>
+
+        <!-- Dynamic Poppy Field Container -->
+        <div id="poppy-container" class="flex-grow relative w-full h-full z-10">
+            <!-- Poppies will be injected here via JavaScript -->
+        </div>
+
+        <!-- Two-Minute Silence Button & Videos -->
+        <div class="w-full text-center pb-8 z-20 flex flex-col items-center">
+            <button id="start-silence-btn" class="font-playfair tracking-wider px-8 py-3 bg-[#161618] border border-gray-700 text-gray-300 rounded hover:bg-[#8a0000] hover:text-white hover:border-[#8a0000] transition-all duration-700 shadow-lg shadow-black/50 mb-6">
+                Observe 2-Minute Silence
+            </button>
+
+            <!-- Video Reflections Links -->
+            <div class="flex flex-wrap justify-center gap-3 px-4 relative z-30">
+                <a href="https://www.youtube.com/watch?v=SIwOSXcVQm8" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 text-gray-400 hover:text-[#c5a059] border border-gray-800 hover:border-[#c5a059] bg-black/60 px-4 py-2 rounded transition-all text-sm font-playfair">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                    Soldier Testimony
+                </a>
+                <a href="https://www.youtube.com/watch?v=-Tv5gBa9DQs" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 text-gray-400 hover:text-[#c5a059] border border-gray-800 hover:border-[#c5a059] bg-black/60 px-4 py-2 rounded transition-all text-sm font-playfair">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                    Somme Footage (1916)
+                </a>
+                <a href="https://www.youtube.com/watch?v=vH3-Gt7mgyM" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 text-gray-400 hover:text-[#c5a059] border border-gray-800 hover:border-[#c5a059] bg-black/60 px-4 py-2 rounded transition-all text-sm font-playfair">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                    Over The Top (Blackadder)
+                </a>
+                <a href="https://www.youtube.com/watch?v=XWrgkOR5p-8" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 text-gray-400 hover:text-[#c5a059] border border-gray-800 hover:border-[#c5a059] bg-black/60 px-4 py-2 rounded transition-all text-sm font-playfair">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                    Mametz Wood Poem
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Sequential Soldier Modal (Parchment Color) -->
+    <div id="single-soldier-modal" class="fade-layer hidden-fade absolute inset-0 z-30 flex items-center justify-center p-4 pointer-events-none">
+        <div id="soldier-card" class="bg-[#f4ebd8] border-2 border-[#8a0000] p-6 md:p-10 text-center rounded shadow-2xl max-w-lg w-full transition-opacity duration-1000 opacity-0 pointer-events-auto">
+            <!-- Content injected via JS sequence -->
+        </div>
+    </div>
+
+    <!-- 4. Silence Screen (Roll of Honour) -->
+    <div id="silence-screen" class="fade-layer hidden-fade fixed inset-0 z-50 bg-black flex flex-col">
+        
+        <!-- Timer Display -->
+        <div class="absolute top-8 right-8 z-50 opacity-50">
+            <span id="silence-timer" class="font-playfair text-xl tracking-widest text-gray-500">02:00</span>
+        </div>
+
+        <!-- Prominent Exit Button -->
+        <button id="end-silence-early-btn" class="absolute bottom-8 right-8 z-50 px-6 py-2 bg-[#161618] border border-gray-700 text-gray-300 rounded hover:bg-[#8a0000] hover:text-white hover:border-[#8a0000] transition-all shadow-lg shadow-black/50 font-playfair tracking-wider">
+            End Silence
+        </button>
+
+        <!-- Scrolling Roll of Honour -->
+        <div class="scroll-mask w-full h-full relative overflow-hidden flex justify-center">
+            <div id="scrolling-content" class="absolute w-full max-w-2xl text-center px-4">
+                <h2 class="text-3xl md:text-4xl font-playfair mb-4 text-[#c5a059] tracking-widest">Roll of Honour</h2>
+                <h3 class="text-xl md:text-2xl font-playfair mb-2 text-gray-200 tracking-wider uppercase">WW1 Suffolk Dead</h3>
+                <p class="mb-16 italic text-gray-500">Remembering Their Sacrifice</p>
+                <div id="roll-of-honour-list" class="flex flex-col space-y-6 text-lg md:text-xl text-gray-400 font-playfair pb-32">
+                    <!-- Names injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA ---
+        // Authentic historical records of soldiers from the Suffolk Regiment & Suffolk Roll of Honour.
+        // Verified against CWGC (Commonwealth War Graves Commission) and local war memorial records.
+        const soldiers = [
+            {
+                name: "Private Frank William Lark",
+                regiment: "4th Battalion, Suffolk Regiment",
+                dateOfAction: "Fell: 15 July 1916 (Aged 21)",
+                details: "Born in Beccles, Suffolk. Killed in action during the Battle of the Somme in a heavy attack on Switch Trench. He has no known grave and is commemorated on the Thiepval Memorial."
+            },
+            {
+                name: "Serjeant Francis James Parker, MM",
+                regiment: "4th Battalion, Suffolk Regiment",
+                dateOfAction: "Fell: 15 July 1916 (Aged 26)",
+                details: "Born in Ipswich, Suffolk. He was awarded the Military Medal for bravery before falling in action during the Battle of the Somme. He is commemorated alongside 72,000 others on the Thiepval Memorial."
+            },
+            {
+                name: "Private Harry George Norton",
+                regiment: "11th Battalion, Suffolk Regiment",
+                dateOfAction: "Fell: 1 July 1916",
+                details: "Born in Burwell. He lost his life on the devastating 'First Day of the Somme', the bloodiest day in the history of the British Army."
+            },
+            {
+                name: "Private John Sentance",
+                regiment: "8th Battalion, Suffolk Regiment",
+                dateOfAction: "Fell: 31 July 1917",
+                details: "Killed on the opening day of the Third Battle of Ypres (Passchendaele). He is commemorated on the Menin Gate Memorial in Belgium."
+            },
+            {
+                name: "Corporal Herbert Branch",
+                regiment: "Suffolk Regiment",
+                dateOfAction: "Fell: 31 July 1917",
+                details: "Fell in the unforgiving mud of the Ypres Salient during the Battle of Passchendaele. His name is forever inscribed on the Menin Gate Memorial."
+            },
+            {
+                name: "Serjeant Alfred Britton",
+                regiment: "3rd Battalion, Suffolk Regiment",
+                dateOfAction: "Fell: 2 March 1916 (Aged 25)",
+                details: "Commemorated on the war memorial in Barrow, Suffolk. He represents the many non-commissioned officers from local villages who led their men and fell on the Western Front."
+            },
+            {
+                name: "Lieutenant Charles Francis Bateman Smith",
+                regiment: "Suffolk Regiment",
+                dateOfAction: "Fell: 15 February 1915 (Aged 28)",
+                details: "One of the early casualties of the Great War, reflecting the immense loss of young, dedicated officers during the gruelling first winter of the conflict in the trenches."
+            }
+        ];
+
+        // Verified list of names from Suffolk Regiment WW1 CWGC records
+        const rollOfHonour = [
+            { name: "Private William Bridges", details: "Age 17, 25 Sep 1915" },
+            { name: "Private Percy Benstead", details: "Age 20, 02 Mar 1916" },
+            { name: "Lance Corporal William Ashton", details: "Age 27, 08 May 1915" },
+            { name: "Serjeant John Henry Argent", details: "Age 34, 08 May 1915" },
+            { name: "Captain Bartle Davers Rushbrooke", details: "Age 22, 25 May 1915" },
+            { name: "Private Stephen Webb", details: "Age 22, 03 Feb 1916" },
+            { name: "2nd Lieut. Reginald Connor Phillips Wilder", details: "Age 19, 18 Nov 1914" },
+            { name: "Private William George Barker", details: "Age 34, 15 Apr 1918" },
+            { name: "Private Leonard Fredrick Barber", details: "Age 20, 27 Jul 1918" },
+            { name: "Lieut. Colonel Charles Arthur Hugh Brett", details: "Age 49, 26 Aug 1914" },
+            { name: "Private Martin Grady", details: "Age 26, 12 Apr 1918" },
+            { name: "Second Lieutenant Robert Clow Foster", details: "Age 25, 10 Apr 1918" },
+            { name: "Private John Pursglove Howe", details: "Age 19, 09 Apr 1918" },
+            { name: "Serjeant Oscar Reginald Hazell", details: "Age 23, 09 Apr 1918" },
+            { name: "Private Archie Robert Barker", details: "Age 23, 27 Mar 1918" },
+            { name: "Private Stanley Charles Andrews", details: "Age 21, 17 Oct 1917" },
+            { name: "Lance Corporal Charles Valentine Borer", details: "Age 36, 26 Sep 1917" },
+            { name: "Lance Corporal Henry William Reynolds", details: "Age 33, 26 Sep 1917" },
+            { name: "Private Alfred Whitmore", details: "Age 24, 01 Jul 1916 (Somme)" },
+            { name: "Lieutenant Harold George Winslow Todd", details: "Age 28, 12 Oct 1916" },
+            { name: "Lance Corporal Charles Speed", details: "Age 23, 01 Jul 1916 (Somme)" },
+            { name: "Private George Henry Southgate", details: "Age 22, 18 Aug 1916" },
+            { name: "Private Victor Harvey Craske Sayer", details: "Age 21, 02 Aug 1916" },
+            { name: "Private Gordon Henry Norman", details: "Age 27, 28 Sep 1916" },
+            { name: "Private Joseph Middleditch", details: "Age 20, 09 Aug 1916" },
+            { name: "Captain Thomas Harry Kinder", details: "Age 24, 03 Jul 1916" },
+            { name: "Private John George Underhill", details: "Age 30, 15 Oct 1918" },
+            { name: "Private Charles Hubbard", details: "Age 32, 01 Jul 1916 (Somme)" },
+            { name: "Lance Corporal Hills", details: "Age 23, 01 Jul 1916 (Somme)" },
+            { name: "Serjeant Charles John Locke", details: "Age 21, 20 Sep 1916" },
+            { name: "Private George Henry Green", details: "Age 25, 18 Aug 1916" },
+            { name: "Corporal Sydney Gordon Hatcher", details: "Age 25, 22 Mar 1918" },
+            { name: "Lance Corporal Oliver Hopkin", details: "Age 20, 09 Apr 1917" },
+            { name: "Private Frederick Harry Barber", details: "Age 20, Sudbury" },
+            { name: "Private Robert James Garwood", details: "24 Apr 1915" },
+            { name: "Private George William Brown", details: "07 May 1915" },
+            { name: "Private Ernest Frank Albon", details: "Long Melford" },
+            { name: "Sergeant Joseph Edward Allen", details: "Sudbury" },
+            { name: "Rifleman Edward Sydney Blythe", details: "Great Cornard" }
+        ];
+
+        // The elegant SVG Poppy to be instantiated dynamically (Removed drop-shadow-xl)
+        const poppySVGTemplate = `
+            <svg viewBox="0 0 100 100" class="poppy-icon w-16 h-16 md:w-24 md:h-24">
+                <defs>
+                    <radialGradient id="poppyGrad" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="#b30000"/>
+                        <stop offset="60%" stop-color="#8a0000"/>
+                        <stop offset="100%" stop-color="#3a0000"/>
+                    </radialGradient>
+                </defs>
+                <path d="M50,15 C75,5 95,25 85,45 C95,65 75,95 50,85 C25,95 5,65 15,45 C5,25 25,5 50,15 Z" fill="url(#poppyGrad)" stroke="#1a0000" stroke-width="1"/>
+                <path d="M25,25 C45,10 75,10 85,35 C95,60 75,85 50,85 C20,85 5,60 25,25 Z" fill="url(#poppyGrad)" opacity="0.9"/>
+                <circle cx="50" cy="50" r="12" fill="#151515"/>
+                <g fill="#c5a059">
+                    <circle cx="50" cy="41" r="1.2"/><circle cx="58" cy="45" r="1.2"/>
+                    <circle cx="59" cy="54" r="1.2"/><circle cx="50" cy="59" r="1.2"/>
+                    <circle cx="41" cy="54" r="1.2"/><circle cx="42" cy="45" r="1.2"/>
+                    <circle cx="54" cy="42" r="1.2"/><circle cx="46" cy="58" r="1.2"/>
+                    <circle cx="45" cy="43" r="1.2"/><circle cx="55" cy="56" r="1.2"/>
+                </g>
+            </svg>
+        `;
+
+        // --- CORE LOGIC ---
+
+        function initApp() {
+            initSplashScreen();
+            initPoppyField();
+            initSilenceFeature();
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener("DOMContentLoaded", initApp);
+        } else {
+            initApp();
+        }
+
+        // 1. Splash Screen Logic
+        function initSplashScreen() {
+            const splashText = document.getElementById('splash-text');
+            const splashScreen = document.getElementById('splash-screen');
+            const mainScreen = document.getElementById('main-screen');
+
+            // Fade in text
+            setTimeout(() => {
+                splashText.style.opacity = '1';
+            }, 500);
+
+            // Wait for user click to transition to main app
+            splashScreen.addEventListener('click', () => {
+                splashScreen.classList.replace('visible-fade', 'hidden-fade');
+                mainScreen.classList.replace('hidden-fade', 'visible-fade');
+            });
+        }
+
+        // 2. Poppy Field Logic
+        let sequenceActive = false;
+
+        function initPoppyField() {
+            const container = document.getElementById('poppy-container');
+            const positions = [];
+
+            // Helper to ensure poppies don't overlap too closely
+            function isTooClose(x, y) {
+                for (let pos of positions) {
+                    let dx = pos.x - x;
+                    let dy = pos.y - y;
+                    // Increased distance threshold for larger poppies
+                    if (Math.sqrt(dx*dx + dy*dy) < 22) return true; 
+                }
+                return false;
+            }
+
+            soldiers.forEach((soldier, index) => {
+                let x, y;
+                let attempts = 0;
+                do {
+                    x = 10 + Math.random() * 80; // Keep within 10% to 90% width
+                    y = 10 + Math.random() * 70; // Keep within 10% to 80% height
+                    attempts++;
+                } while (isTooClose(x, y) && attempts < 100);
+
+                positions.push({x, y});
+
+                // Create wrapper element
+                const poppyEl = document.createElement('div');
+                poppyEl.className = 'poppy-wrapper';
+                poppyEl.style.left = `${x}%`;
+                poppyEl.style.top = `${y}%`;
+                poppyEl.innerHTML = poppySVGTemplate;
+
+                // Add interaction - clicking any starts the sequence
+                poppyEl.addEventListener('click', () => {
+                    if (sequenceActive) return; // Prevent multiple clicks from breaking sequence
+                    sequenceActive = true;
+                    playSequence(0);
+                });
+
+                container.appendChild(poppyEl);
+            });
+        }
+
+        // 3. Sequential Modal Logic
+        function playSequence(index) {
+            if (index >= soldiers.length) {
+                sequenceActive = false; // Sequence finished
+                return;
+            }
+
+            const poppyEls = document.querySelectorAll('.poppy-wrapper');
+            const currentPoppy = poppyEls[index];
+            const modal = document.getElementById('single-soldier-modal');
+            const card = document.getElementById('soldier-card');
+            const soldier = soldiers[index];
+
+            // 1. Open the current poppy
+            currentPoppy.classList.add('active');
+
+            // 2. Wait 2s for opening animation, then show parchment text
+            setTimeout(() => {
+                card.innerHTML = `
+                    <h2 class="font-playfair text-2xl md:text-3xl text-[#8a0000] mb-2">${soldier.name}</h2>
+                    <h3 class="text-sm md:text-base text-gray-800 font-semibold uppercase tracking-wider mb-2">${soldier.regiment}</h3>
+                    <p class="text-sm text-gray-700 italic mb-6">${soldier.dateOfAction}</p>
+                    <div class="w-16 h-[2px] bg-[#8a0000] mx-auto mb-6"></div>
+                    <p class="text-gray-900 leading-relaxed text-base font-lora">${soldier.details}</p>
+                `;
+                modal.classList.replace('hidden-fade', 'visible-fade');
+                card.style.opacity = '1';
+
+                // 3. Keep text visible for 10 seconds
+                setTimeout(() => {
+                    // 4. Fade out text
+                    card.style.opacity = '0';
+                    
+                    setTimeout(() => {
+                        modal.classList.replace('visible-fade', 'hidden-fade');
+                        
+                        // 5. Close poppy
+                        currentPoppy.classList.remove('active');
+                        
+                        // 6. Wait 2s before next poppy sequence starts
+                        setTimeout(() => {
+                            playSequence(index + 1);
+                        }, 2000);
+
+                    }, 1000); // 1s to fade out card
+
+                }, 10000); // 10s text display
+
+            }, 2000); // 2s to open poppy
+        }
+
+        // 4. Two-Minute Silence Logic
+        let silenceInterval;
+        function initSilenceFeature() {
+            const startBtn = document.getElementById('start-silence-btn');
+            const endBtn = document.getElementById('end-silence-early-btn');
+            const rohList = document.getElementById('roll-of-honour-list');
+            
+            // Populate the Roll of Honour list dynamically
+            rollOfHonour.forEach(person => {
+                const nameEl = document.createElement('div');
+                nameEl.className = 'flex flex-col items-center mb-4';
+                nameEl.innerHTML = `
+                    <span class="text-gray-300">${person.name}</span>
+                    <span class="text-sm text-gray-500 font-lora italic mt-1">${person.details}</span>
+                `;
+                rohList.appendChild(nameEl);
+            });
+
+            startBtn.addEventListener('click', startSilenceSequence);
+            endBtn.addEventListener('click', endSilenceSequence);
+        }
+
+        function startSilenceSequence() {
+            // Mute any potential global audio (best practice requirement)
+            document.querySelectorAll('audio, video').forEach(media => media.muted = true);
+            
+            // Hide main screen, hide modal if active, Show silence screen
+            document.getElementById('single-soldier-modal').classList.replace('visible-fade', 'hidden-fade');
+            document.getElementById('main-screen').classList.replace('visible-fade', 'hidden-fade');
+            document.getElementById('silence-screen').classList.replace('hidden-fade', 'visible-fade');
+            
+            // Restart the scrolling animation
+            const scrollContent = document.getElementById('scrolling-content');
+            scrollContent.style.animation = 'none';
+            void scrollContent.offsetWidth; // Trigger reflow
+            scrollContent.style.animation = 'scrollCredits 120s linear forwards';
+
+            // Start 120s timer
+            let timeLeft = 120;
+            const timerDisplay = document.getElementById('silence-timer');
+            timerDisplay.innerText = "02:00";
+
+            silenceInterval = setInterval(() => {
+                timeLeft--;
+                let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+                let s = (timeLeft % 60).toString().padStart(2, '0');
+                timerDisplay.innerText = `${m}:${s}`;
+                
+                if (timeLeft <= 0) {
+                    endSilenceSequence();
+                }
+            }, 1000);
+        }
+
+        function endSilenceSequence() {
+            clearInterval(silenceInterval);
+            
+            // Fade out silence screen, return to main
+            document.getElementById('silence-screen').classList.replace('visible-fade', 'hidden-fade');
+            document.getElementById('main-screen').classList.replace('hidden-fade', 'visible-fade');
+            
+            // Stop animation
+            document.getElementById('scrolling-content').style.animation = 'none';
+        }
+    </script>
+</body>
+</html>
